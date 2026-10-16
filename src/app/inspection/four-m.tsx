@@ -7,11 +7,13 @@ import { Card, Eyebrow, Row, Screen, StatusBadge } from '../../ui/components';
 import { colors } from '../../ui/theme';
 
 export default function FourMScreen() {
-  const { settings, records } = useDm();
+  const { settings, records, updateSettings } = useDm();
   const l = settings.language;
-  const slotKey = `${dateKey()}-${settings.shift}`;
+  const slotKey = `${dateKey()}-${settings.targetShift}`;
   const done = CATEGORIES.filter(category => records.some(record => record.type === '4m' && record.category === category && record.workshop === settings.workshop && record.slotKey === slotKey)).length;
-  return <Screen><Eyebrow>{settings.workshop} / {t(l, settings.shift)}</Eyebrow><Text style={s.intro}>{t(l, 'fourMIntro')}</Text>
+  return <Screen><Eyebrow>{settings.workshop} · {t(l, settings.targetShift)}</Eyebrow>
+    <View style={s.shiftPicker}><Text style={s.shiftLabel}>{t(l, 'currentShiftTarget')}</Text><View style={s.shiftOptions}>{(['day', 'night'] as const).map(shift => <Pressable key={shift} accessibilityRole="button" accessibilityState={{ selected: settings.targetShift === shift }} onPress={() => void updateSettings({ ...settings, targetShift: shift })} style={[s.shiftOption, settings.targetShift === shift && s.shiftOptionActive]}><Text style={[s.shiftText, settings.targetShift === shift && s.shiftTextActive]}>{t(l, shift)}</Text></Pressable>)}</View></View>
+    <Text style={s.intro}>{t(l, 'fourMIntro')}</Text>
     <Card style={{ backgroundColor: colors.tealSoft, borderColor: colors.tealSoft }}><Row><Text style={s.progress}>{done} / 4</Text><Text style={s.progressLabel}>{t(l, 'fourMProgress')}</Text></Row><View style={s.progressTrack}><View style={[s.progressFill, { width: `${done * 25}%` }]} /></View></Card>
     {CATEGORIES.map((category, index) => {
       const record = records.find(item => item.type === '4m' && item.category === category && item.workshop === settings.workshop && item.slotKey === slotKey);
@@ -21,7 +23,7 @@ export default function FourMScreen() {
 }
 
 const s = StyleSheet.create({
-  intro: { color: colors.muted, fontSize: 14, lineHeight: 21 },
+  intro: { color: colors.muted, fontSize: 14, lineHeight: 21 }, shiftPicker: { gap: 8 }, shiftLabel: { color: colors.ink, fontSize: 14, fontWeight: '900' }, shiftOptions: { flexDirection: 'row', gap: 8 }, shiftOption: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.line, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }, shiftOptionActive: { backgroundColor: colors.blue, borderColor: colors.blue }, shiftText: { color: colors.muted, fontSize: 14, fontWeight: '800' }, shiftTextActive: { color: '#fff' },
   progress: { fontSize: 26, color: colors.teal, fontWeight: '900' }, progressLabel: { color: colors.teal, fontSize: 13, fontWeight: '800' },
     progressTrack: { height: 7, borderRadius: 9, backgroundColor: '#D2E2FA' }, progressFill: { height: 7, borderRadius: 9, backgroundColor: colors.teal },
   categoryCard: { padding: 13, borderRadius: 17 }, symbol: { width: 46, height: 46, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }, symbolText: { fontSize: 20, fontWeight: '900' },

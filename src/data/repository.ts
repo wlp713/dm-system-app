@@ -20,18 +20,29 @@ export const localRepository: CheckRepository = {
   async saveSettings(settings) { await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); },
   async getRecords() {
     const current = await AsyncStorage.getItem(RECORDS_KEY);
-    if (current) return JSON.parse(current) as CheckRecord[];
-    const legacy = await AsyncStorage.getItem(LEGACY_RECORDS_KEY);
-    if (!legacy) return [];
-    const records = (JSON.parse(legacy) as Record<string, unknown>[]).map(record => ({
-      ...record,
-      type: record.type === 'twoHour' ? 'legacyInterval' : record.type,
-    })) as CheckRecord[];
+    const legacy = current ? null : await AsyncStorage.getItem(LEGACY_RECORDS_KEY);
+    if (!current && !legacy) return [];
+    const records = (JSON.parse(current ?? legacy!) as Record<string, unknown>[]).map(raw => {
+      const record = {
+        ...raw,
+        type: raw.type === 'twoHour' ? 'legacyInterval' : raw.type,
+        targetShift: raw.targetShift ?? raw.shift,
+      } as CheckRecord;
+      if ((record.status === 'abnormal' || record.status === 'missed') && !record.issueStatus) {
+        record.issueStatus = 'awaitingAck';
+        record.priority = 'followUp';
+        record.issueUpdates = [{
+          id: `${record.id}-migrated`, actor: record.operator, action: 'reported',
+          message: record.note, createdAt: record.createdAt,
+        }];
+      }
+      return record;
+    });
     await AsyncStorage.setItem(RECORDS_KEY, JSON.stringify(records));
     return records;
   },
   async saveRecord(record) {
     const records = await this.getRecords();
-    await AsyncStorage.setItem(RECORDS_KEY, JSON.stringify([record, ...records]));
+    await AsyncStorage.setItem(RECORDS_KEY, JSON.stringify([record, ...records.filter(item => item.id !== record.id)]));
   },
 };

@@ -9,16 +9,18 @@ import { useDm } from '../../state/DmProvider';
 import { AppIcon, Card, Row, Screen } from '../../ui/components';
 import { RankingRow } from '../../ui/RankingRow';
 import { colors } from '../../ui/theme';
+import { isOpenIssue } from '../../domain/model';
 
 const periods: DashboardPeriod[] = ['day', 'week', 'month'];
 
 export default function HomeScreen() {
-  const { settings } = useDm();
+  const { settings, records } = useDm();
   const [period, setPeriod] = useState<DashboardPeriod>('day');
   const [metric, setMetric] = useState<RankingMetric>('4m');
   const l = settings.language;
   const shops = workshopRankings(period, metric);
   const people = executorRankings(period, metric, l);
+  const openIssues = records.filter(isOpenIssue).sort((a, b) => Number(b.priority === 'immediate') - Number(a.priority === 'immediate'));
   const average = (values: number[]) => Math.round(values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1));
   const fourMRate = average(shops.map(row => metric === '4m' ? row.rate : row.otherRate));
   const meetingRate = average(shops.map(row => metric === 'meeting' ? row.rate : row.otherRate));
@@ -50,6 +52,16 @@ export default function HomeScreen() {
     </Card>
 
     <View style={s.demoNotice}><Text style={s.demoDot}>●</Text><Text style={s.demoText}>{t(l, 'demoData')} · {t(l, 'demoDataHint')}</Text></View>
+
+    {openIssues.length ? <Pressable onPress={() => router.push('/inbox' as never)} style={({ pressed }) => pressed && s.pressed}>
+      <Card style={s.issueCard}>
+        <Row><Text style={s.section}>{t(l, 'openIssueCount')} · {openIssues.length}</Text><Text style={s.link}>{t(l, 'todos')}　›</Text></Row>
+        {openIssues.slice(0, 2).map(issue => <View key={issue.id} style={s.issueRow}>
+          <Text style={s.issueDot}>{issue.priority === 'immediate' ? '!' : '•'}</Text>
+          <View style={s.issueCopy}><Text style={s.issueImpact} numberOfLines={2}>{issue.note}</Text><Text style={s.issueMeta}>{issue.workshop} · {t(l, issue.issueStatus ?? 'awaitingAck')} · {issue.responsiblePerson ?? t(l, 'noName')}</Text></View>
+        </View>)}
+      </Card>
+    </Pressable> : null}
 
     <Row style={s.sectionRow}><Text style={s.section}>{t(l, 'quickStart')}</Text></Row>
     <View style={s.actions}>
@@ -102,6 +114,7 @@ const s = StyleSheet.create({
   summaryMetrics: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 10 }, summaryMetric: { flex: 1, gap: 4 }, summaryLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' }, summaryValue: { fontSize: 21, fontWeight: '900' }, summaryDivider: { width: 1, height: 38, backgroundColor: colors.line },
   periodSwitch: { flexDirection: 'row', backgroundColor: '#F0F3F8', borderRadius: 10, padding: 3, gap: 2 }, periodOption: { paddingVertical: 8, paddingHorizontal: 8, borderRadius: 8 }, periodActive: { backgroundColor: '#FFFFFF' }, periodText: { color: colors.muted, fontSize: 11, fontWeight: '800' }, periodTextActive: { color: colors.blue },
   demoNotice: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 11, backgroundColor: '#FFF7E9' }, demoDot: { color: colors.amber, fontSize: 9 }, demoText: { flex: 1, color: '#956017', fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  issueCard: { gap: 9, borderColor: '#EBC7C1' }, issueRow: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingVertical: 4 }, issueDot: { color: colors.red, fontSize: 17, fontWeight: '900', width: 18, textAlign: 'center' }, issueCopy: { flex: 1, gap: 3 }, issueImpact: { color: colors.ink, fontSize: 13, lineHeight: 18, fontWeight: '800' }, issueMeta: { color: colors.muted, fontSize: 11 },
   sectionRow: { alignItems: 'center', marginTop: 1 }, section: { color: colors.ink, fontSize: 16, fontWeight: '900' }, sectionHint: { color: colors.muted, fontSize: 10, marginTop: 3 },
   actions: { flexDirection: 'row', gap: 10 }, actionPressable: { flex: 1, minWidth: 0, borderRadius: 16, overflow: 'hidden' }, actionTile: { minHeight: 110, padding: 13, justifyContent: 'space-between', alignItems: 'flex-start' }, pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] }, actionTitle: { color: '#FFFFFF', fontWeight: '900', fontSize: 15 }, actionSubtitle: { color: '#EAF4FF', fontSize: 9, fontWeight: '700' },
   rankingCard: { padding: 15, borderRadius: 18, gap: 3 }, rankingHeader: { alignItems: 'center', paddingBottom: 8 }, metricSwitch: { flexDirection: 'row', backgroundColor: '#F0F3F8', padding: 4, borderRadius: 11, gap: 5, marginBottom: 3 }, metricOption: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' }, metricActiveBlue: { backgroundColor: colors.blue }, metricActiveTeal: { backgroundColor: colors.teal }, metricOptionText: { color: colors.muted, fontSize: 11, fontWeight: '800' }, metricOptionTextActive: { color: '#FFFFFF' },

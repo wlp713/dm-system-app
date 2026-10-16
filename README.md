@@ -1,31 +1,54 @@
-# DM 系统 / ระบบ DM
+# DM 工厂日常管理 / ระบบ DM
 
-工厂日常管理 APP 原型，重点实现全厂执行排名、**4M 点检** 和 **两小时检讨会议** 的拍照打卡。采用 Expo / React Native + TypeScript，同一套代码面向 Android、iOS 和网页预览。
+面向泰国工厂的中泰双语移动端流程原型。当前分支先把一线 4M 开班准备、两小时检讨会议和异常责任闭环串起来。
 
-当前可体验版本为 v0.2。班次交接预警、责任人协同和跨班闭环正在按 [v0.3 产品逻辑](docs/DM-PRODUCT-LOGIC-v0.3.md) 重新设计；该逻辑稿尚未进入应用实现。
+## 当前版本能演示什么
 
-## 已实现
+- 全厂首页支持日、周、月和 4M / 两小时检讨会议切换，并展示车间与执行人排名。排名现在是明确标注的样例数据。
+- 4M 点检按人、机、料、法展开，执行人选择本次要准备的白班或夜班；同一车间、同一目标班次、同一项目只保留一条有效记录。更正时保留旧内容和照片。
+- 两小时检讨分上午、下午两个场次，记录是否召开并要求现场照片；未召开必须填写原因。
+- 异常进入协同待办，带责任部门、主责人、影响、时限和照片；可接单、处理、申请复核、退回、跨班交接和关闭，所有动作保留时间线。
+- 异常卡片可生成摘要并由员工主动分享至微信。微信分享不代替 DM 内接单。
+- 现场主要操作提供中文和泰文。泰语设备默认优先使用泰文界面。
 
-- 全厂首页：支持日 / 周 / 月切换；可分别查看 4M、两小时检讨会议的车间 / 部门排名和执行人排名。当前排名明确标记为演示数据。
-- 4M：人、机、料、法四类点检，提供各类别的选择项、正常 / 异常、照片和说明。人员照片可选；机、料、法必须有照片。
-- 两小时检讨会议：上午、下午各一场；支持 10:00 / 10:30、14:00 / 15:00 时点配置，记录是否召开并上传照片；未召开需说明原因。
-- 记录：按当前车间查看本机保存的点检记录和照片。
-- 设置：人员姓名、六个车间及 PE/IP/QA/PC、班次、中泰语言切换。
+完整工厂运行逻辑、岗位权限、弱网、消息升级、数据结构和 Apple 安装路径见 [DM 现场运行与交付方案](docs/DM-OPERATING-SYSTEM-v1.md)。
 
-各车间内部的正式检查项尚未配置，原型选择项仅用于流程预览。LOSS 台账暂缓。当前记录只保存在单机；跨 Android/iOS 实时同步要接入 Firebase 后才能使用。v0.2 代码结构见 [DM 产品与代码架构初稿](docs/DM-PRODUCT-ARCHITECTURE.md)。
+## 当前运行边界
 
-## 分层
+这是可交互的手机 / 网页流程原型，点检和异常数据保存在当前设备。Firebase 身份认证、跨手机实时同步、服务器推送、真实员工名册和正式排名尚未接通；样例排名不能用于工厂绩效决策。各车间正式检查项和会议日历还需工厂确认后配置。
 
-`src/app` 页面与导航；`src/ui` 可复用界面与表单；`src/domain` 4M / 会议模型、指标周期、样例排名和中泰文案；`src/data` 本地仓储与照片选择；`src/state` 界面状态。接 Firebase 时扩展 repository 数据适配层，不重写点检页面。
+iPhone 正式安装路线已按 App Store 非公开链接设计，但当前没有组织的 Apple Developer / App Store Connect 签名与审核配置，因此还没有可点击安装的 iPhone 商店链接。原生推送需要 EAS 项目、Apple APNs / Android FCM 凭据和后端分发服务；员工端不需要手动加主屏幕或逐人设置网页通知。
 
-## 本地运行
+## 本地预览
 
-需要 Node.js 22.13 或更新版本。运行 `npm ci`、`npx expo start`，或 `npm run web` 在浏览器预览。`npm run lint`、`npm run typecheck` 检查代码，`npm run export:web` 导出网页版。
+需要 Node.js 22.13 或更新版本。
 
-## 安装包与发布
+```bash
+npm ci
+npm run web
+```
 
-- Android：[`v0.2.0 演示 APK`](https://github.com/wlp713/dm-system-app/releases/download/v0.2.0/DM-System-Android-v0.2.0.apk) 已发布，使用开发签名，仅适合内部试用。正式稳定发布需配置专用签名密钥；也可登录 Expo/EAS 后运行 `npx eas-cli@latest build --platform android --profile preview`。
-- iOS：`npx eas-cli@latest build --platform ios --profile production --auto-submit` 提交 TestFlight。需 Expo/EAS 账号、Apple Developer 账号与 App Store Connect 配置。苹果正式使用 TestFlight 或 App Store 链接安装。
-- `site/index.html` 是统一下载页；`site/config.js` 配置当前 APK 链接。iPhone 现在可通过 Safari“添加到主屏幕”安装网页演示版；原生安装仍需 TestFlight。
+静态网页导出：
 
-技术依据：[Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/)、[Expo Router](https://docs.expo.dev/router/installation/)、[ImagePicker](https://docs.expo.dev/versions/v58.0.0/sdk/imagepicker/)、[内部安装包](https://docs.expo.dev/build/internal-distribution/)、[TestFlight](https://docs.expo.dev/submit/testflight/)。
+```bash
+npm run export:web
+```
+
+输出到 `dist/`。代码检查：
+
+```bash
+npm run typecheck
+npx expo lint
+```
+
+## 项目结构
+
+- `src/app/`：页面与 Expo Router 导航
+- `src/ui/`：点检表单、相机、复用组件和视觉样式
+- `src/domain/`：4M / 会议 / 异常状态、指标和中泰文案
+- `src/data/`：本机数据仓储与异常分享摘要
+- `src/state/`：当前设备的页面数据状态
+- `site/`：手机安装入口网页；商店链接只有审核完成后才能填写
+- `docs/DM-OPERATING-SYSTEM-v1.md`：现场协同、通知、安装及生产验收完整方案
+
+正式投产前需完成 Firebase 项目与安全规则、用户和责任名册、车间点检模板、Apple App Store 非公开分发审核、Android 签名及真实手机联调。不得将本地演示数据标记为全厂实时数据。

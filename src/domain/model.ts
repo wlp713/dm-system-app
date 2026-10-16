@@ -7,11 +7,34 @@ export type DashboardPeriod = 'day' | 'week' | 'month';
 export type RankingMetric = '4m' | 'meeting';
 export type MeetingPeriod = 'morning' | 'afternoon';
 export type MeetingTime = '10:00' | '10:30' | '14:00' | '15:00';
+export type DepartmentKey = 'production' | 'logistics' | 'equipment' | 'quality' | 'engineering' | 'other';
+export type IssuePriority = 'immediate' | 'beforeStart' | 'followUp';
+export type IssueStatus = 'awaitingAck' | 'accepted' | 'processing' | 'waitingVerification' | 'crossShift' | 'closed';
+export type IssueAction = 'reported' | 'accepted' | 'started' | 'submittedForReview' | 'returned' | 'handedOver' | 'closed' | 'comment';
+
+export interface IssueUpdate {
+  id: string;
+  actor: string;
+  action: IssueAction;
+  message: string;
+  createdAt: string;
+}
+
+export interface RecordRevision {
+  id: string;
+  editor: string;
+  createdAt: string;
+  status: CheckStatus | MeetingStatus;
+  note: string;
+  photoUri: string | null;
+  selection?: string;
+}
 
 export interface Settings {
   workshop: string;
   operator: string;
   shift: 'day' | 'night';
+  targetShift: 'day' | 'night';
   language: Language;
   morningMeetingTime: Extract<MeetingTime, '10:00' | '10:30'>;
   afternoonMeetingTime: Extract<MeetingTime, '14:00' | '15:00'>;
@@ -24,6 +47,7 @@ export interface CheckRecord {
   workshop: string;
   operator: string;
   shift: Settings['shift'];
+  targetShift?: Settings['shift'];
   status: CheckStatus | MeetingStatus;
   note: string;
   photoUri: string | null;
@@ -31,14 +55,44 @@ export interface CheckRecord {
   meetingPeriod?: MeetingPeriod;
   slotKey: string;
   createdAt: string;
+  responsiblePerson?: string;
+  responsibleDepartment?: DepartmentKey;
+  priority?: IssuePriority;
+  issueStatus?: IssueStatus;
+  issueUpdates?: IssueUpdate[];
+  revision?: number;
+  revisionOf?: string;
+  revisionHistory?: RecordRevision[];
 }
 
 export const CATEGORIES: Category[] = ['person', 'machine', 'material', 'method'];
 export const WORKSHOPS = ['PRO1', 'PRO2', 'PRO3', 'PRO4', 'PRO5', 'PRO6', 'PE', 'IP', 'QA', 'PC'];
+export const RESPONSIBLE_DEPARTMENTS: DepartmentKey[] = ['production', 'logistics', 'equipment', 'quality', 'engineering', 'other'];
+const deviceLocale = Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase();
 export const DEFAULT_SETTINGS: Settings = {
-  workshop: 'PRO1', operator: '', shift: 'day', language: 'zh',
+  workshop: 'PRO1', operator: '', shift: 'day', targetShift: 'day', language: deviceLocale.startsWith('th') ? 'th' : 'zh',
   morningMeetingTime: '10:30', afternoonMeetingTime: '14:00',
 };
+
+export function isIssueRecord(record: CheckRecord) {
+  return record.status === 'abnormal' || record.status === 'missed';
+}
+
+export function isOpenIssue(record: CheckRecord) {
+  return isIssueRecord(record) && record.issueStatus !== 'closed';
+}
+
+export function nextIssueStatus(status: IssueStatus, action: Exclude<IssueAction, 'reported' | 'comment'>): IssueStatus | null {
+  const transitions: Record<IssueStatus, Partial<Record<Exclude<IssueAction, 'reported' | 'comment'>, IssueStatus>>> = {
+    awaitingAck: { accepted: 'accepted', handedOver: 'crossShift' },
+    accepted: { started: 'processing', submittedForReview: 'waitingVerification', handedOver: 'crossShift' },
+    processing: { submittedForReview: 'waitingVerification', handedOver: 'crossShift' },
+    waitingVerification: { returned: 'processing', closed: 'closed' },
+    crossShift: { accepted: 'accepted', started: 'processing' },
+    closed: {},
+  };
+  return transitions[status][action] ?? null;
+}
 
 export const CATEGORY_OPTION_KEYS: Record<Category, string[]> = {
   person: ['present', 'leave', 'absent', 'late'],
