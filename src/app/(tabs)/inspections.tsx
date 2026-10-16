@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { t } from '../../domain/i18n';
-import { today4m, twoHourSlot } from '../../domain/model';
+import { today4m, meetingSlotKey, type MeetingPeriod } from '../../domain/model';
 import { useDm } from '../../state/DmProvider';
 import { AppIcon, Card, Eyebrow, Row, Screen, StatusBadge, Title } from '../../ui/components';
 import { colors } from '../../ui/theme';
@@ -9,12 +9,12 @@ import { colors } from '../../ui/theme';
 export default function InspectionsScreen() {
   const { settings, records } = useDm();
   const l = settings.language;
-  const slot = twoHourSlot();
   const count = today4m(records, settings);
-  const thisSlot = records.find(record => record.type === 'twoHour' && record.workshop === settings.workshop && record.slotKey === slot.key);
+  const periods: MeetingPeriod[] = ['morning', 'afternoon'];
+  const meetings = periods.map(period => records.find(record => record.type === 'meeting' && record.workshop === settings.workshop && record.slotKey === meetingSlotKey(period)));
 
   return <Screen>
-    <Eyebrow>{settings.workshop} · {t(l, settings.shift)}</Eyebrow>
+    <Eyebrow>{t(l, 'factoryOverview')} · {settings.workshop} · {t(l, settings.shift)}</Eyebrow>
     <Title subtitle={t(l, 'inspectionIntro')}>{t(l, 'inspectionHub')}</Title>
     <Text style={s.section}>{t(l, 'today')}</Text>
 
@@ -30,14 +30,20 @@ export default function InspectionsScreen() {
       </Card>
     </Pressable>
 
-    <Pressable onPress={() => router.push('/inspection/two-hour')} style={({ pressed }) => pressed && s.pressed}>
+    <Pressable onPress={() => router.push('/inspection/meeting' as Href)} style={({ pressed }) => pressed && s.pressed}>
       <Card style={s.card}>
         <Row style={s.top}>
           <View style={[s.icon, { backgroundColor: colors.cyanSoft }]}><AppIcon name={{ ios: 'clock.fill', android: 'schedule', web: 'schedule' }} glyph="◷" tintColor={colors.cyan} size={23} /></View>
-          <View style={s.copy}><Text style={s.cardTitle}>{t(l, 'twoHour')}</Text><Text style={s.cardDescription}>{t(l, 'twoHourIntro')}</Text></View>
+          <View style={s.copy}><Text style={s.cardTitle}>{t(l, 'meeting')}</Text><Text style={s.cardDescription}>{t(l, 'meetingIntro')}</Text></View>
           <Text style={s.arrow}>›</Text>
         </Row>
-        <Row style={s.slotRow}><Text style={s.progressLabel}>{slot.label} · {t(l, 'photoProof')}</Text><StatusBadge label={thisSlot ? t(l, 'checked') : t(l, 'notChecked')} tone={thisSlot ? 'teal' : 'amber'} /></Row>
+        {periods.map((period, index) => {
+          const record = meetings[index];
+          const title = t(l, period === 'morning' ? 'meetingMorning' : 'meetingAfternoon');
+          const time = period === 'morning' ? settings.morningMeetingTime : settings.afternoonMeetingTime;
+          const label = !record ? t(l, 'notChecked') : t(l, record.status === 'held' ? 'meetingHeld' : 'meetingMissed');
+          return <Row key={period} style={s.slotRow}><Text style={s.progressLabel}>{title} · {time}</Text><StatusBadge label={label} tone={record?.status === 'held' ? 'teal' : record?.status === 'missed' ? 'red' : 'amber'} /></Row>;
+        })}
       </Card>
     </Pressable>
 

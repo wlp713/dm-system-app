@@ -1,96 +1,109 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { executorRankings, workshopRankings } from '../../domain/demo-rankings';
+import { formatPeriod, type DashboardPeriod, type RankingMetric } from '../../domain/model';
 import { t } from '../../domain/i18n';
-import { dateKey, today4m, twoHourSlot } from '../../domain/model';
 import { useDm } from '../../state/DmProvider';
-import { AppIcon, Card, Row, Screen, StatusBadge } from '../../ui/components';
+import { AppIcon, Card, Row, Screen } from '../../ui/components';
+import { RankingRow } from '../../ui/RankingRow';
 import { colors } from '../../ui/theme';
 
+const periods: DashboardPeriod[] = ['day', 'week', 'month'];
+
 export default function HomeScreen() {
-  const { settings, records } = useDm();
+  const { settings } = useDm();
+  const [period, setPeriod] = useState<DashboardPeriod>('day');
+  const [metric, setMetric] = useState<RankingMetric>('4m');
   const l = settings.language;
-  const slot = twoHourSlot();
-  const scoped = records.filter(record => record.workshop === settings.workshop);
-  const thisSlot = scoped.find(record => record.type === 'twoHour' && record.slotKey === slot.key);
-  const count = today4m(records, settings);
-  const currentShiftRecords = scoped.filter(record => record.slotKey === `${dateKey()}-${settings.shift}` || (record.type === 'twoHour' && record.shift === settings.shift && record.slotKey.startsWith(dateKey())));
-  const recent = [...scoped].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 2);
+  const shops = workshopRankings(period, metric);
+  const people = executorRankings(period, metric, l);
+  const average = (values: number[]) => Math.round(values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1));
+  const fourMRate = average(shops.map(row => metric === '4m' ? row.rate : row.otherRate));
+  const meetingRate = average(shops.map(row => metric === 'meeting' ? row.rate : row.otherRate));
 
   return <Screen>
     <LinearGradient colors={['#0D5ED7', '#277FF1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.header}>
       <Row style={s.headerTop}>
         <View style={s.headerCopy}>
-          <Text style={s.headerTitle}>{t(l, 'dashboard')}</Text>
-          <Text style={s.headerSubtitle}>{settings.workshop}　·　{t(l, settings.shift)}</Text>
+          <Text style={s.factory}>{t(l, 'factoryName')}</Text>
+          <Text style={s.headerTitle}>{t(l, 'fullFactoryOverview')}</Text>
+          <Text style={s.headerSubtitle}>{t(l, 'greeting')}</Text>
         </View>
         <Pressable onPress={() => router.push('/settings')} style={s.avatar} accessibilityLabel={t(l, 'settings')}>
           <Text style={s.avatarText}>{settings.operator.trim().charAt(0) || 'DM'}</Text>
         </Pressable>
       </Row>
-      <Text style={s.headerTagline}>{t(l, 'greeting')}</Text>
     </LinearGradient>
 
-    <Card style={s.overview}>
-      <Row><Text style={s.overviewTitle}>{t(l, 'overview')}</Text><Text style={s.date}>{dateKey()}</Text></Row>
-      <View style={s.metrics}>
-        <View style={s.metric}>
-          <Text style={s.metricLabel}>{t(l, 'fourM')}</Text>
-          <Text style={[s.metricValue, { color: colors.teal }]}>{count}<Text style={s.metricDenom}>/4</Text></Text>
-          <View style={s.track}><View style={[s.fill, { width: `${count * 25}%` }]} /></View>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metric}>
-          <Text style={s.metricLabel}>{t(l, 'twoHour')}</Text>
-          <Text style={[s.metricValue, { color: thisSlot ? '#0D9B79' : colors.blue }]}>{thisSlot ? t(l, 'checked') : t(l, 'notChecked')}</Text>
-          <Text style={s.metricFoot}>{slot.label}</Text>
-        </View>
-        <View style={s.metricDivider} />
-        <View style={s.metric}>
-          <Text style={s.metricLabel}>{t(l, 'shiftRecords')}</Text>
-          <Text style={[s.metricValue, { color: colors.ink }]}>{currentShiftRecords.length}</Text>
-          <Text style={s.metricFoot}>{t(l, 'records')}</Text>
+    <Card style={s.summary}>
+      <Row><Text style={s.summaryTitle}>{t(l, 'factoryOverview')}</Text><Text style={s.date}>{formatPeriod(new Date(), period)}</Text></Row>
+      <View style={s.summaryMetrics}>
+        <View style={s.summaryMetric}><Text style={s.summaryLabel}>{t(l, 'metric4m')}</Text><Text style={[s.summaryValue, { color: colors.blue }]}>{fourMRate}%</Text></View>
+        <View style={s.summaryDivider} />
+        <View style={s.summaryMetric}><Text style={s.summaryLabel}>{t(l, 'metricMeeting')}</Text><Text style={[s.summaryValue, { color: colors.teal }]}>{meetingRate}%</Text></View>
+        <View style={s.periodSwitch}>
+          {periods.map(value => <Pressable key={value} onPress={() => setPeriod(value)} style={[s.periodOption, period === value && s.periodActive]}><Text style={[s.periodText, period === value && s.periodTextActive]}>{t(l, `period${value[0].toUpperCase()}${value.slice(1)}` as 'periodDay' | 'periodWeek' | 'periodMonth')}</Text></Pressable>)}
         </View>
       </View>
     </Card>
 
-    {!settings.operator ? <Pressable onPress={() => router.push('/settings')} style={s.namePrompt}><Text style={s.namePromptText}>{t(l, 'nameRequired')}　→</Text></Pressable> : null}
+    <View style={s.demoNotice}><Text style={s.demoDot}>●</Text><Text style={s.demoText}>{t(l, 'demoData')} · {t(l, 'demoDataHint')}</Text></View>
 
-    <Row style={s.sectionRow}><Text style={s.section}>{t(l, 'quickStart')}</Text><Text style={s.sectionHint}>{settings.workshop}</Text></Row>
+    <Row style={s.sectionRow}><Text style={s.section}>{t(l, 'quickStart')}</Text></Row>
     <View style={s.actions}>
       <Pressable onPress={() => router.push('/inspection/four-m')} style={({ pressed }) => [s.actionPressable, pressed && s.pressed]}>
         <LinearGradient colors={['#2F8BFA', '#1265E8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionTile}>
-          <AppIcon name={{ ios: 'camera.fill', android: 'photo_camera', web: 'photo_camera' }} glyph="camera" tintColor="#FFFFFF" size={26} />
+          <AppIcon name={{ ios: 'camera.fill', android: 'photo_camera', web: 'photo_camera' }} glyph="camera" tintColor="#FFFFFF" size={23} />
           <Text style={s.actionTitle}>{t(l, 'fourM')}</Text>
-          <Text style={s.actionSubtitle}>{t(l, 'fourMProgress')}　{count}/4</Text>
+          <Text style={s.actionSubtitle}>{t(l, 'person')} · {t(l, 'machine')} · {t(l, 'material')} · {t(l, 'method')}</Text>
         </LinearGradient>
       </Pressable>
-      <Pressable onPress={() => router.push('/inspection/two-hour')} style={({ pressed }) => [s.actionPressable, pressed && s.pressed]}>
+      <Pressable onPress={() => router.push('/inspection/meeting' as Href)} style={({ pressed }) => [s.actionPressable, pressed && s.pressed]}>
         <LinearGradient colors={['#18C4BE', '#079FA7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionTile}>
-          <AppIcon name={{ ios: 'clock.fill', android: 'schedule', web: 'schedule' }} glyph="◷" tintColor="#FFFFFF" size={26} />
-          <Text style={s.actionTitle}>{t(l, 'twoHour')}</Text>
-          <Text style={s.actionSubtitle}>{slot.label}　›</Text>
+          <AppIcon name={{ ios: 'clock.fill', android: 'schedule', web: 'schedule' }} glyph="◷" tintColor="#FFFFFF" size={23} />
+          <Text style={s.actionTitle}>{t(l, 'meeting')}</Text>
+          <Text style={s.actionSubtitle}>{t(l, 'meetingMorning')} · {t(l, 'meetingAfternoon')}</Text>
         </LinearGradient>
       </Pressable>
     </View>
 
-    <Row style={s.sectionRow}><Text style={s.section}>{t(l, 'latest')}</Text><Pressable onPress={() => router.push('/records')}><Text style={s.link}>{t(l, 'seeAll')}　›</Text></Pressable></Row>
-    {recent.length ? recent.map(record => <Card key={record.id} style={s.recentCard}>
-      <View style={s.recentIcon}><AppIcon name={{ ios: record.type === '4m' ? 'checkmark.circle.fill' : 'clock.fill', android: record.type === '4m' ? 'task_alt' : 'schedule', web: record.type === '4m' ? 'task_alt' : 'schedule' }} glyph={record.type === '4m' ? '✓' : '◷'} tintColor={colors.teal} size={21} /></View>
-      <View style={s.recentText}><Text style={s.recordTitle}>{record.type === '4m' ? `${t(l, 'fourM')} · ${record.category ? t(l, `${record.category}Full`) : ''}` : t(l, 'twoHour')}</Text><Text style={s.recordMeta}>{record.operator} · {new Date(record.createdAt).toLocaleString()}</Text></View>
-      <StatusBadge label={t(l, record.status)} tone={record.status === 'normal' ? 'teal' : 'red'} />
-    </Card>) : <Card style={s.emptyCard}><Text style={s.recordMeta}>{t(l, 'empty')}</Text></Card>}
+    <Card style={s.rankingCard}>
+      <Row style={s.rankingHeader}><View><Text style={s.section}>{t(l, 'workshopRanking')}</Text><Text style={s.sectionHint}>{formatPeriod(new Date(), period)} · {t(l, 'completion')}</Text></View></Row>
+      <View style={s.metricSwitch}>
+        {(['4m', 'meeting'] as const).map(value => {
+          const active = metric === value;
+          return <Pressable key={value} onPress={() => setMetric(value)} style={[s.metricOption, active && (value === '4m' ? s.metricActiveBlue : s.metricActiveTeal)]}>
+            <Text style={[s.metricOptionText, active && s.metricOptionTextActive]}>{t(l, value === '4m' ? 'metric4m' : 'metricMeeting')}</Text>
+          </Pressable>;
+        })}
+      </View>
+      {shops.map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
+    </Card>
+
+    <Card style={s.rankingCard}>
+      <Row style={s.rankingHeader}>
+        <View><Text style={s.section}>{t(l, 'executorRanking')}</Text><Text style={s.sectionHint}>{t(l, metric === '4m' ? 'metric4m' : 'metricMeeting')} · {t(l, 'completion')}</Text></View>
+        <Pressable onPress={() => router.push({ pathname: '/rankings', params: { period, metric } } as unknown as Href)}><Text style={s.link}>{t(l, 'viewAll')}　›</Text></Pressable>
+      </Row>
+      {people.slice(0, 5).map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
+    </Card>
+
+    {!settings.operator ? <Pressable onPress={() => router.push('/settings')} style={s.namePrompt}><Text style={s.namePromptText}>{t(l, 'nameRequired')}　→</Text></Pressable> : null}
   </Screen>;
 }
 
 const s = StyleSheet.create({
-  header: { marginHorizontal: -20, marginTop: -20, marginBottom: -34, paddingHorizontal: 21, paddingTop: 24, paddingBottom: 60, borderBottomLeftRadius: 27, borderBottomRightRadius: 27 },
-  headerTop: { alignItems: 'center' }, headerCopy: { flex: 1, gap: 8 }, headerTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '900', letterSpacing: 0.2 }, headerSubtitle: { color: '#E2EEFF', fontSize: 13, fontWeight: '700' },
-  headerTagline: { color: '#D9E9FF', fontSize: 12, marginTop: 17 }, avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.blue, fontWeight: '900', fontSize: 15 },
-  overview: { marginTop: 0, padding: 17, borderRadius: 20, shadowColor: '#254E83', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 3 }, overviewTitle: { color: colors.ink, fontSize: 16, fontWeight: '900' }, date: { color: colors.muted, fontSize: 11 },
-  metrics: { flexDirection: 'row', alignItems: 'stretch', marginTop: 2 }, metric: { flex: 1, minWidth: 0, gap: 5 }, metricDivider: { width: 1, backgroundColor: colors.line, marginHorizontal: 10 }, metricLabel: { color: colors.muted, fontSize: 10, fontWeight: '700', minHeight: 25 }, metricValue: { fontSize: 17, lineHeight: 23, fontWeight: '900' }, metricDenom: { color: colors.muted, fontSize: 12, fontWeight: '700' }, metricFoot: { color: colors.muted, fontSize: 9, lineHeight: 14 }, track: { height: 5, borderRadius: 9, backgroundColor: '#E8EEF7', overflow: 'hidden' }, fill: { height: '100%', borderRadius: 9, backgroundColor: colors.teal },
-  namePrompt: { padding: 13, borderRadius: 12, backgroundColor: colors.amberSoft }, namePromptText: { color: colors.amber, fontWeight: '800', fontSize: 13 },
-  sectionRow: { alignItems: 'center', marginTop: 1 }, section: { color: colors.ink, fontSize: 17, fontWeight: '900' }, sectionHint: { color: colors.muted, fontSize: 11 },
-  actions: { flexDirection: 'row', gap: 11 }, actionPressable: { flex: 1, minWidth: 0, borderRadius: 17, overflow: 'hidden' }, actionTile: { minHeight: 142, padding: 15, justifyContent: 'space-between', alignItems: 'flex-start' }, pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] }, actionTitle: { color: '#FFFFFF', fontWeight: '900', fontSize: 16 }, actionSubtitle: { color: '#EAF4FF', fontSize: 10, fontWeight: '700' },
-  link: { color: colors.teal, fontSize: 11, fontWeight: '800' }, recentCard: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 11 }, recentIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.tealSoft, alignItems: 'center', justifyContent: 'center' }, recentText: { flex: 1, gap: 4 }, recordTitle: { color: colors.ink, fontSize: 13, fontWeight: '800' }, recordMeta: { color: colors.muted, fontSize: 10 }, emptyCard: { alignItems: 'center', paddingVertical: 19 },
+  header: { marginHorizontal: -20, marginTop: -20, marginBottom: -34, paddingHorizontal: 21, paddingTop: 25, paddingBottom: 59, borderBottomLeftRadius: 27, borderBottomRightRadius: 27 },
+  headerTop: { alignItems: 'center' }, headerCopy: { flex: 1, gap: 5 }, factory: { color: '#D9E9FF', fontSize: 12, fontWeight: '700' }, headerTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '900' }, headerSubtitle: { color: '#E2EEFF', fontSize: 12, marginTop: 3 },
+  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.blue, fontWeight: '900', fontSize: 14 },
+  summary: { marginTop: 0, padding: 15, borderRadius: 19, shadowColor: '#254E83', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 3 }, summaryTitle: { color: colors.ink, fontSize: 15, fontWeight: '900' }, date: { color: colors.muted, fontSize: 10 },
+  summaryMetrics: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 10 }, summaryMetric: { flex: 1, gap: 4 }, summaryLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' }, summaryValue: { fontSize: 21, fontWeight: '900' }, summaryDivider: { width: 1, height: 38, backgroundColor: colors.line },
+  periodSwitch: { flexDirection: 'row', backgroundColor: '#F0F3F8', borderRadius: 10, padding: 3, gap: 2 }, periodOption: { paddingVertical: 8, paddingHorizontal: 8, borderRadius: 8 }, periodActive: { backgroundColor: '#FFFFFF' }, periodText: { color: colors.muted, fontSize: 11, fontWeight: '800' }, periodTextActive: { color: colors.blue },
+  demoNotice: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 11, backgroundColor: '#FFF7E9' }, demoDot: { color: colors.amber, fontSize: 9 }, demoText: { flex: 1, color: '#956017', fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  sectionRow: { alignItems: 'center', marginTop: 1 }, section: { color: colors.ink, fontSize: 16, fontWeight: '900' }, sectionHint: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  actions: { flexDirection: 'row', gap: 10 }, actionPressable: { flex: 1, minWidth: 0, borderRadius: 16, overflow: 'hidden' }, actionTile: { minHeight: 110, padding: 13, justifyContent: 'space-between', alignItems: 'flex-start' }, pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] }, actionTitle: { color: '#FFFFFF', fontWeight: '900', fontSize: 15 }, actionSubtitle: { color: '#EAF4FF', fontSize: 9, fontWeight: '700' },
+  rankingCard: { padding: 15, borderRadius: 18, gap: 3 }, rankingHeader: { alignItems: 'center', paddingBottom: 8 }, metricSwitch: { flexDirection: 'row', backgroundColor: '#F0F3F8', padding: 4, borderRadius: 11, gap: 5, marginBottom: 3 }, metricOption: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' }, metricActiveBlue: { backgroundColor: colors.blue }, metricActiveTeal: { backgroundColor: colors.teal }, metricOptionText: { color: colors.muted, fontSize: 11, fontWeight: '800' }, metricOptionTextActive: { color: '#FFFFFF' },
+  link: { color: colors.teal, fontSize: 11, fontWeight: '800' }, namePrompt: { padding: 13, borderRadius: 12, backgroundColor: colors.amberSoft }, namePromptText: { color: colors.amber, fontWeight: '800', fontSize: 12 },
 });

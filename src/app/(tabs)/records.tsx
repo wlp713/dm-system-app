@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { categoryName, t } from '../../domain/i18n';
-import { CheckType } from '../../domain/model';
+import type { CheckRecord, CheckType } from '../../domain/model';
+import type { TextKey } from '../../domain/i18n';
 import { useDm } from '../../state/DmProvider';
 import { Card, Eyebrow, Row, Screen, StatusBadge, Title } from '../../ui/components';
 import { colors } from '../../ui/theme';
@@ -11,9 +12,13 @@ export default function RecordsScreen() {
   const l = settings.language;
   const [filter, setFilter] = useState<CheckType | 'all'>('all');
   const visible = records.filter(record => record.workshop === settings.workshop && (filter === 'all' || record.type === filter));
+  const recordTitle = (type: CheckType, category?: CheckRecord['category']) => type === '4m' && category
+    ? `${t(l, 'fourM')} · ${categoryName(l, category, true)}`
+    : t(l, type === 'meeting' ? 'meeting' : type === 'legacyInterval' ? 'legacyInterval' : 'fourM');
+  const statusLabel = (status: CheckRecord['status']) => t(l, status === 'held' ? 'meetingHeld' : status === 'missed' ? 'meetingMissed' : status);
   return <Screen><Eyebrow>{settings.workshop}</Eyebrow><Title subtitle={t(l, 'localOnly')}>{t(l, 'records')}</Title>
-    <View style={s.filters}>{(['all', '4m', 'twoHour'] as const).map(value => <Pressable key={value} onPress={() => setFilter(value)} style={[s.filter, filter === value && s.active]}><Text style={[s.filterText, filter === value && s.activeText]}>{t(l, value === 'all' ? 'all' : value === '4m' ? 'fourMOnly' : 'twoHourOnly')}</Text></Pressable>)}</View>
-    {visible.length ? visible.map(record => <Card key={record.id}><Row><View style={{ flex: 1 }}><Text style={s.title}>{record.type === '4m' && record.category ? `${t(l, 'fourM')} · ${categoryName(l, record.category, true)}` : t(l, 'twoHour')}</Text><Text style={s.meta}>{record.operator} · {new Date(record.createdAt).toLocaleString()}</Text></View><StatusBadge label={t(l, record.status)} tone={record.status === 'normal' ? 'teal' : 'red'} /></Row>{record.photoUri ? <Image source={{ uri: record.photoUri }} style={s.photo} resizeMode="cover" /> : <Text style={s.meta}>{t(l, 'noPhoto')}</Text>}{record.note ? <Text style={s.note}>{record.note}</Text> : null}</Card>) : <Card><Text style={s.empty}>{t(l, 'empty')}</Text></Card>}
+    <View style={s.filters}>{(['all', '4m', 'meeting'] as const).map(value => <Pressable key={value} onPress={() => setFilter(value)} style={[s.filter, filter === value && s.active]}><Text style={[s.filterText, filter === value && s.activeText]}>{t(l, value === 'all' ? 'all' : value === '4m' ? 'fourMOnly' : 'meetingOnly')}</Text></Pressable>)}</View>
+    {visible.length ? visible.map(record => <Card key={record.id}><Row><View style={{ flex: 1 }}><Text style={s.title}>{recordTitle(record.type, record.category)}</Text><Text style={s.meta}>{record.operator} · {new Date(record.createdAt).toLocaleString()}</Text></View><StatusBadge label={statusLabel(record.status)} tone={record.status === 'normal' || record.status === 'held' ? 'teal' : 'red'} /></Row>{record.selection ? <Text style={s.meta}>{t(l, 'pointContent')}：{t(l, record.selection as TextKey)}</Text> : null}{record.photoUri ? <Image source={{ uri: record.photoUri }} style={s.photo} resizeMode="cover" /> : <Text style={s.meta}>{t(l, 'noPhoto')}</Text>}{record.note ? <Text style={s.note}>{record.note}</Text> : null}</Card>) : <Card><Text style={s.empty}>{t(l, 'empty')}</Text></Card>}
   </Screen>;
 }
 

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { categoryName, t } from '../../domain/i18n';
 import { CATEGORIES, dateKey } from '../../domain/model';
 import { useDm } from '../../state/DmProvider';
-import { Card, Eyebrow, Row, Screen, StatusBadge, Title } from '../../ui/components';
+import { Card, Eyebrow, Row, Screen, StatusBadge } from '../../ui/components';
 import { colors } from '../../ui/theme';
 
 export default function FourMScreen() {
@@ -11,7 +11,7 @@ export default function FourMScreen() {
   const l = settings.language;
   const slotKey = `${dateKey()}-${settings.shift}`;
   const done = CATEGORIES.filter(category => records.some(record => record.type === '4m' && record.category === category && record.workshop === settings.workshop && record.slotKey === slotKey)).length;
-  return <Screen><Eyebrow>{settings.workshop} / {t(l, settings.shift)}</Eyebrow><Title subtitle={t(l, 'fourMIntro')}>{t(l, 'fourM')}</Title>
+  return <Screen><Eyebrow>{settings.workshop} / {t(l, settings.shift)}</Eyebrow><Text style={s.intro}>{t(l, 'fourMIntro')}</Text>
     <Card style={{ backgroundColor: colors.tealSoft, borderColor: colors.tealSoft }}><Row><Text style={s.progress}>{done} / 4</Text><Text style={s.progressLabel}>{t(l, 'fourMProgress')}</Text></Row><View style={s.progressTrack}><View style={[s.progressFill, { width: `${done * 25}%` }]} /></View></Card>
     {CATEGORIES.map((category, index) => {
       const record = records.find(item => item.type === '4m' && item.category === category && item.workshop === settings.workshop && item.slotKey === slotKey);
@@ -21,6 +21,7 @@ export default function FourMScreen() {
 }
 
 const s = StyleSheet.create({
+  intro: { color: colors.muted, fontSize: 14, lineHeight: 21 },
   progress: { fontSize: 26, color: colors.teal, fontWeight: '900' }, progressLabel: { color: colors.teal, fontSize: 13, fontWeight: '800' },
     progressTrack: { height: 7, borderRadius: 9, backgroundColor: '#D2E2FA' }, progressFill: { height: 7, borderRadius: 9, backgroundColor: colors.teal },
   categoryCard: { padding: 13, borderRadius: 17 }, symbol: { width: 46, height: 46, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }, symbolText: { fontSize: 20, fontWeight: '900' },
