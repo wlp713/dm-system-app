@@ -1,0 +1,27 @@
+name: Build demo Android APK
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci
+      - run: CI=1 npx expo prebuild --platform android --no-install
+      - run: chmod +x android/gradlew && cd android && ./gradlew :app:assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dm-system-android-demo
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

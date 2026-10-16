@@ -22,7 +22,7 @@
 
 ## 安装包与发布
 
-- Android：`npx eas-cli@latest build --platform android --profile preview` 生成可安装 APK。需先登录 Expo/EAS 账号。
+- Android：仓库的 `Build demo Android APK` 工作流可生成演示 APK，使用开发签名，仅适合内部试用。正式稳定发布需配置专用签名密钥；也可登录 Expo/EAS 后运行 `npx eas-cli@latest build --platform android --profile preview`。
 - iOS：`npx eas-cli@latest build --platform ios --profile production --auto-submit` 提交 TestFlight。需 Expo/EAS 账号、Apple Developer 账号与 App Store Connect 配置。苹果正式使用 TestFlight 或 App Store 链接安装。
 - `site/index.html` 是统一下载页；在 `site/config.js` 填入实际 APK 和 TestFlight 链接后再发布。没有 APK 时会显示“待发布”。iPhone 现在可通过 Safari“添加到主屏幕”安装网页演示版；原生安装仍需 TestFlight。
 
