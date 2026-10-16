@@ -87,7 +87,7 @@ site/                安装说明页及 Android / iOS 入口
 
 ## 7. 安装与发布
 
-- Android：通过 EAS 生成签名 APK，并从 GitHub Release 下载；官网安装页读取最新 APK 链接。
+- Android：本版演示 APK 已从 GitHub Release 下载；使用开发签名，仅适合内部试用。正式发布需配置专用签名密钥。
 - iPhone：当前可由网页“添加到主屏幕”安装体验，但它不是原生 iOS 安装包；原生 App Store / TestFlight 发布需要 Apple 开发者签名账号。
 - 两个客户端都访问同一个后端项目和数据规则，不能各自保存互不相通的数据。
 
