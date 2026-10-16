@@ -15,7 +15,7 @@ export default function FourMScreen() {
     <Card style={{ backgroundColor: colors.tealSoft, borderColor: colors.tealSoft }}><Row><Text style={s.progress}>{done} / 4</Text><Text style={s.progressLabel}>{t(l, 'fourMProgress')}</Text></Row><View style={s.progressTrack}><View style={[s.progressFill, { width: `${done * 25}%` }]} /></View></Card>
     {CATEGORIES.map((category, index) => {
       const record = records.find(item => item.type === '4m' && item.category === category && item.workshop === settings.workshop && item.slotKey === slotKey);
-      return <Pressable key={category} onPress={() => router.push({ pathname: '/check/[category]', params: { category } })}><Card><Row><View style={[s.symbol, { backgroundColor: index % 2 ? colors.blueSoft : colors.tealSoft }]}><Text style={[s.symbolText, { color: index % 2 ? colors.blue : colors.teal }]}>{categoryName(l, category)}</Text></View><View style={s.middle}><Text style={s.category}>{categoryName(l, category, true)}</Text><Text style={s.hint}>{t(l, `${category}Hint`)}</Text></View><StatusBadge label={record ? t(l, 'checked') : t(l, 'notChecked')} tone={record ? 'teal' : 'amber'} /></Row><Row><Text style={s.bottom}>{record ? new Date(record.createdAt).toLocaleTimeString() : t(l, 'photoProof')}</Text><Text style={s.arrow}>→</Text></Row></Card></Pressable>;
+      return <Pressable key={category} onPress={() => router.push({ pathname: '/check/[category]', params: { category } })} style={({ pressed }) => pressed && s.pressed}><Card style={s.categoryCard}><Row><View style={[s.symbol, { backgroundColor: index % 2 ? colors.blueSoft : colors.tealSoft }]}><Text style={[s.symbolText, { color: index % 2 ? colors.blue : colors.teal }]}>{categoryName(l, category)}</Text></View><View style={s.middle}><Text style={s.category}>{categoryName(l, category, true)}</Text><Text style={s.hint}>{t(l, `${category}Hint`)}</Text></View><StatusBadge label={record ? t(l, 'checked') : t(l, 'notChecked')} tone={record ? 'teal' : 'amber'} /><Text style={s.arrow}>›</Text></Row></Card></Pressable>;
     })}
   </Screen>;
 }
@@ -23,7 +23,7 @@ export default function FourMScreen() {
 const s = StyleSheet.create({
   progress: { fontSize: 26, color: colors.teal, fontWeight: '900' }, progressLabel: { color: colors.teal, fontSize: 13, fontWeight: '800' },
     progressTrack: { height: 7, borderRadius: 9, backgroundColor: '#D2E2FA' }, progressFill: { height: 7, borderRadius: 9, backgroundColor: colors.teal },
-  symbol: { width: 54, height: 54, borderRadius: 15, justifyContent: 'center', alignItems: 'center' }, symbolText: { fontSize: 21, fontWeight: '900' },
-  middle: { flex: 1, gap: 3 }, category: { fontSize: 17, color: colors.ink, fontWeight: '800' }, hint: { fontSize: 12, color: colors.muted },
-  bottom: { color: colors.muted, fontSize: 12 }, arrow: { color: colors.teal, fontSize: 17, fontWeight: '800' },
+  categoryCard: { padding: 13, borderRadius: 17 }, symbol: { width: 46, height: 46, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }, symbolText: { fontSize: 20, fontWeight: '900' },
+  middle: { flex: 1, gap: 3 }, category: { fontSize: 16, color: colors.ink, fontWeight: '800' }, hint: { fontSize: 11, color: colors.muted },
+  arrow: { color: colors.teal, fontSize: 21, fontWeight: '800', marginLeft: -6 }, pressed: { opacity: 0.86 },
 });
