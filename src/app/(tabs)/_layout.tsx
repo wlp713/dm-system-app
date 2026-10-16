@@ -1,20 +1,19 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
 import { useDm } from '../../state/DmProvider';
 import { t } from '../../domain/i18n';
 import { colors } from '../../ui/theme';
+import { AppIcon } from '../../ui/components';
 
 const items = [
-  { name: 'index', key: 'home', symbol: '⌂' },
-  { name: 'four-m', key: 'fourM', symbol: '4M' },
-  { name: 'two-hour', key: 'twoHour', symbol: '2H' },
-  { name: 'records', key: 'records', symbol: '▤' },
-  { name: 'settings', key: 'settings', symbol: '●' },
+  { name: 'index', key: 'home', icon: { ios: 'house.fill', android: 'home', web: 'home' }, glyph: '⌂' },
+  { name: 'inspections', key: 'inspectionHub', icon: { ios: 'checklist', android: 'fact_check', web: 'fact_check' }, glyph: '☷' },
+  { name: 'records', key: 'records', icon: { ios: 'doc.text.fill', android: 'description', web: 'description' }, glyph: '▤' },
+  { name: 'settings', key: 'settings', icon: { ios: 'person.crop.circle.fill', android: 'account_circle', web: 'account_circle' }, glyph: '●' },
 ] as const;
 
 export default function TabsLayout() {
   const { settings } = useDm();
-  return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { height: 66, paddingTop: 6, paddingBottom: 9, borderTopColor: colors.line, backgroundColor: '#fff' }, tabBarLabelStyle: { fontSize: 10, fontWeight: '700' } }}>
-    {items.map(item => <Tabs.Screen key={item.name} name={item.name} options={{ title: t(settings.language, item.key), tabBarIcon: ({ color }) => <Text style={{ color, fontSize: item.symbol.length === 2 ? 15 : 22, fontWeight: '900' }}>{item.symbol}</Text> }} />)}
+  return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { height: 68, paddingTop: 7, paddingBottom: 9, borderTopColor: colors.line, backgroundColor: '#fff' }, tabBarLabelStyle: { fontSize: 11, fontWeight: '700' } }}>
+    {items.map(item => <Tabs.Screen key={item.name} name={item.name} options={{ title: t(settings.language, item.key), tabBarIcon: ({ color }) => <AppIcon name={item.icon} glyph={item.glyph} tintColor={color} size={22} /> }} />)}
   </Tabs>;
 }

@@ -22,7 +22,7 @@ export default function FourMScreen() {
 
 const s = StyleSheet.create({
   progress: { fontSize: 26, color: colors.teal, fontWeight: '900' }, progressLabel: { color: colors.teal, fontSize: 13, fontWeight: '800' },
-  progressTrack: { height: 7, borderRadius: 9, backgroundColor: '#C4E6DD' }, progressFill: { height: 7, borderRadius: 9, backgroundColor: colors.teal },
+    progressTrack: { height: 7, borderRadius: 9, backgroundColor: '#D2E2FA' }, progressFill: { height: 7, borderRadius: 9, backgroundColor: colors.teal },
   symbol: { width: 54, height: 54, borderRadius: 15, justifyContent: 'center', alignItems: 'center' }, symbolText: { fontSize: 21, fontWeight: '900' },
   middle: { flex: 1, gap: 3 }, category: { fontSize: 17, color: colors.ink, fontWeight: '800' }, hint: { fontSize: 12, color: colors.muted },
   bottom: { color: colors.muted, fontSize: 12 }, arrow: { color: colors.teal, fontSize: 17, fontWeight: '800' },

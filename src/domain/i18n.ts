@@ -2,9 +2,10 @@ import type { Category, Language } from './model';
 
 const words = {
   zh: {
-    app: 'DM 日常管理', home: '工作台', fourM: '4M 点检', twoHour: '两小时检查', records: '记录', settings: '我的',
+    app: 'DM 日常管理', home: '首页', inspectionHub: '点检', fourM: '4M 点检', twoHour: '两小时检查', records: '记录', settings: '我的',
     greeting: '把每天的标准动作做好', today: '今日执行', overview: '本班点检概况', fourMProgress: '4M 已完成', twoHourCurrent: '当前两小时检查',
     start: '开始点检', go: '进入检查', seeAll: '查看全部记录', currentWorkshop: '当前车间', shift: '班次', day: '白班', night: '夜班',
+    dashboard: 'DM工作台', quickStart: '快捷打卡', currentTimeBlock: '当前时段', shiftRecords: '本班记录', inspectionIntro: '选择点检项目，拍照记录现场状态。',
     person: '人', machine: '机', material: '料', method: '法', personFull: '人员', machineFull: '设备', materialFull: '物料', methodFull: '方法',
     personHint: '出勤、岗位与人员准备', machineHint: '设备状态与保养准备', materialHint: '物料齐套与实物核对', methodHint: '工装夹具与作业方法',
     fourMIntro: '按人、机、料、法逐项打卡。各车间的细分事项将在下一版配置。',
@@ -20,9 +21,10 @@ const words = {
     updatedAt: '提交时间', noName: '未填写姓名', demo: '首版演示', detail: '点检详情', noNetwork: '本机保存',
   },
   th: {
-    app: 'DM การจัดการประจำวัน', home: 'หน้าหลัก', fourM: 'ตรวจ 4M', twoHour: 'ตรวจทุก 2 ชั่วโมง', records: 'บันทึก', settings: 'ของฉัน',
+    app: 'DM การจัดการประจำวัน', home: 'หน้าหลัก', inspectionHub: 'ตรวจสอบ', fourM: 'ตรวจ 4M', twoHour: 'ตรวจทุก 2 ชั่วโมง', records: 'บันทึก', settings: 'ของฉัน',
     greeting: 'ทำงานตามมาตรฐานทุกวัน', today: 'งานวันนี้', overview: 'ภาพรวมกะนี้', fourMProgress: '4M เสร็จแล้ว', twoHourCurrent: 'ตรวจรอบปัจจุบัน',
     start: 'เริ่มตรวจ', go: 'เริ่มตรวจ', seeAll: 'ดูบันทึกทั้งหมด', currentWorkshop: 'พื้นที่ปัจจุบัน', shift: 'กะ', day: 'กะกลางวัน', night: 'กะกลางคืน',
+    dashboard: 'ศูนย์งาน DM', quickStart: 'เริ่มบันทึก', currentTimeBlock: 'ช่วงเวลาปัจจุบัน', shiftRecords: 'บันทึกของกะนี้', inspectionIntro: 'เลือกหัวข้อตรวจและถ่ายภาพสภาพหน้างาน',
     person: 'คน', machine: 'เครื่อง', material: 'วัสดุ', method: 'วิธี', personFull: 'พนักงาน', machineFull: 'เครื่องจักร', materialFull: 'วัสดุ', methodFull: 'วิธีการ',
     personHint: 'การมาทำงานและความพร้อมของคน', machineHint: 'สภาพเครื่องจักรและการบำรุงรักษา', materialHint: 'ความพร้อมของวัสดุ', methodHint: 'อุปกรณ์จับยึดและวิธีทำงาน',
     fourMIntro: 'ตรวจคน เครื่อง วัสดุ และวิธีการ รายการย่อยของแต่ละพื้นที่จะเพิ่มในรุ่นถัดไป',
