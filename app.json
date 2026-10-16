@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "DM 系统",
+    "slug": "dm-system",
+    "version": "0.1.0",
+    "scheme": "dm-system",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dm.factory.app"
+    },
+    "android": {
+      "package": "com.dm.factory.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/dm-system-app/app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ]
+  }
+}

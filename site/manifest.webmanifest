@@ -1,0 +1,10 @@
+{
+  "name": "DM 系统",
+  "short_name": "DM",
+  "start_url": "/dm-system-app/app/",
+  "scope": "/dm-system-app/",
+  "display": "standalone",
+  "background_color": "#F4F7F8",
+  "theme_color": "#102C39",
+  "icons": [{"src": "./icon.png", "sizes": "1024x1024", "type": "image/png"}]
+}
