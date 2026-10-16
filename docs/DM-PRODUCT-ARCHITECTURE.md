@@ -111,4 +111,4 @@ site/                安装说明页及 Android / iOS 入口
 
 - 工厂资料：`日常管理V2.0版5.8(融合DMS4.0版本).pdf`，重点参考第 13、20、28–36、54–58 页的日常管理、分层会议、时间配置示例和 4M 管理流程；第 54 页的时间仅作课件示例，本厂排程以用户提供时点为准。
 - 工厂资料：`MBS-日常管理4.0（修订）.pptx`，重点参考第 37–38、46、60–62 页的问题处理、目标与责任、分层看板和排名设计。
-- 产品方法参考：`bmad-agent-pm` 与 `manufacturing-expert` 的公开 Skills 描述。只采用与本产品相关的用户需求拆解、可度量指标和制造业系统边界，不照搬通用制造系统功能。
+- 产品方法参考：skills.sh 上的 [bmad-agent-pm](https://www.skills.sh/bmad-code-org/bmad-method/bmad-agent-pm) 与 [manufacturing-expert](https://www.skills.sh/personamanagmentlayer/pcl/manufacturing-expert)。本方案只采用与产品相关的需求拆解、指标定义和制造业系统边界，不照搬通用制造系统功能。
