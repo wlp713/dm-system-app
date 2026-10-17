@@ -3,34 +3,37 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { executorRankings, workshopRankings } from '../../domain/demo-rankings';
-import { formatPeriod, type DashboardPeriod, type RankingMetric } from '../../domain/model';
+import { CATEGORIES, dateKey, formatPeriod, isOpenIssue, meetingSlotKey, type DashboardPeriod, type RankingMetric } from '../../domain/model';
 import { t } from '../../domain/i18n';
 import { useDm } from '../../state/DmProvider';
-import { AppIcon, Card, Row, Screen } from '../../ui/components';
+import { AppIcon, Card, Row, Screen, StatusBadge } from '../../ui/components';
 import { RankingRow } from '../../ui/RankingRow';
 import { colors } from '../../ui/theme';
-import { isOpenIssue } from '../../domain/model';
 
 const periods: DashboardPeriod[] = ['day', 'week', 'month'];
 
 export default function HomeScreen() {
-  const { settings, records } = useDm();
+  const { settings, records, issues } = useDm();
   const [period, setPeriod] = useState<DashboardPeriod>('day');
   const [metric, setMetric] = useState<RankingMetric>('4m');
   const l = settings.language;
   const shops = workshopRankings(period, metric);
   const people = executorRankings(period, metric, l);
-  const openIssues = records.filter(isOpenIssue).sort((a, b) => Number(b.priority === 'immediate') - Number(a.priority === 'immediate'));
+  const visibleShops = settings.role === 'admin' ? shops : shops.filter(row => row.workshop === settings.workshop);
+  const visiblePeople = settings.role === 'admin' ? people : people.filter(row => row.workshop === settings.workshop);
+  const openIssues = issues.filter(isOpenIssue).sort((a, b) => Number(b.priority === 'immediate') - Number(a.priority === 'immediate'));
   const average = (values: number[]) => Math.round(values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1));
-  const fourMRate = average(shops.map(row => metric === '4m' ? row.rate : row.otherRate));
-  const meetingRate = average(shops.map(row => metric === 'meeting' ? row.rate : row.otherRate));
+  const fourMRate = average(visibleShops.map(row => metric === '4m' ? row.rate : row.otherRate));
+  const meetingRate = average(visibleShops.map(row => metric === 'meeting' ? row.rate : row.otherRate));
+  const fourMDone = CATEGORIES.filter(category => records.some(record => record.type === '4m' && record.category === category && record.workshop === settings.workshop && record.slotKey === `${dateKey()}-${settings.targetShift}`)).length;
+  const meetingsDone = (['morning', 'afternoon'] as const).filter(periodValue => records.some(record => record.type === 'meeting' && record.workshop === settings.workshop && record.slotKey === meetingSlotKey(periodValue))).length;
 
   return <Screen>
     <LinearGradient colors={['#0D5ED7', '#277FF1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.header}>
       <Row style={s.headerTop}>
         <View style={s.headerCopy}>
           <Text style={s.factory}>{t(l, 'factoryName')}</Text>
-          <Text style={s.headerTitle}>{t(l, 'fullFactoryOverview')}</Text>
+          <Text style={s.headerTitle}>{t(l, settings.role === 'admin' ? 'fullFactoryOverview' : settings.role === 'supervisor' ? 'workshopOverview' : 'myToday')}</Text>
           <Text style={s.headerSubtitle}>{t(l, 'greeting')}</Text>
         </View>
         <Pressable onPress={() => router.push('/settings')} style={s.avatar} accessibilityLabel={t(l, 'settings')}>
@@ -39,7 +42,7 @@ export default function HomeScreen() {
       </Row>
     </LinearGradient>
 
-    <Card style={s.summary}>
+    {settings.role !== 'operator' ? <Card style={s.summary}>
       <Row><Text style={s.summaryTitle}>{t(l, 'factoryOverview')}</Text><Text style={s.date}>{formatPeriod(new Date(), period)}</Text></Row>
       <View style={s.summaryMetrics}>
         <View style={s.summaryMetric}><Text style={s.summaryLabel}>{t(l, 'metric4m')}</Text><Text style={[s.summaryValue, { color: colors.blue }]}>{fourMRate}%</Text></View>
@@ -49,16 +52,22 @@ export default function HomeScreen() {
           {periods.map(value => <Pressable key={value} onPress={() => setPeriod(value)} style={[s.periodOption, period === value && s.periodActive]}><Text style={[s.periodText, period === value && s.periodTextActive]}>{t(l, `period${value[0].toUpperCase()}${value.slice(1)}` as 'periodDay' | 'periodWeek' | 'periodMonth')}</Text></Pressable>)}
         </View>
       </View>
-    </Card>
+    </Card> : null}
 
     <View style={s.demoNotice}><Text style={s.demoDot}>●</Text><Text style={s.demoText}>{t(l, 'demoData')} · {t(l, 'demoDataHint')}</Text></View>
+
+    {settings.role === 'operator' ? <Card style={s.tasksCard}>
+      <Text style={s.section}>{t(l, 'tasks')}</Text>
+      <Pressable onPress={() => router.push('/inspection/four-m')} style={s.taskRow}><View style={s.taskCopy}><Text style={s.taskTitle}>{t(l, 'fourM')}</Text><Text style={s.sectionHint}>{t(l, settings.targetShift)} · {t(l, 'planned')}</Text></View><StatusBadge label={`${fourMDone}/4`} tone={fourMDone === 4 ? 'teal' : 'amber'} /></Pressable>
+      <Pressable onPress={() => router.push('/inspection/meeting' as Href)} style={s.taskRow}><View style={s.taskCopy}><Text style={s.taskTitle}>{t(l, 'meeting')}</Text><Text style={s.sectionHint}>{t(l, 'meetingMorning')} · {t(l, 'meetingAfternoon')}</Text></View><StatusBadge label={`${meetingsDone}/2`} tone={meetingsDone === 2 ? 'teal' : 'amber'} /></Pressable>
+    </Card> : null}
 
     {openIssues.length ? <Pressable onPress={() => router.push('/inbox' as never)} style={({ pressed }) => pressed && s.pressed}>
       <Card style={s.issueCard}>
         <Row><Text style={s.section}>{t(l, 'openIssueCount')} · {openIssues.length}</Text><Text style={s.link}>{t(l, 'todos')}　›</Text></Row>
         {openIssues.slice(0, 2).map(issue => <View key={issue.id} style={s.issueRow}>
           <Text style={s.issueDot}>{issue.priority === 'immediate' ? '!' : '•'}</Text>
-          <View style={s.issueCopy}><Text style={s.issueImpact} numberOfLines={2}>{issue.note}</Text><Text style={s.issueMeta}>{issue.workshop} · {t(l, issue.issueStatus ?? 'awaitingAck')} · {issue.responsiblePerson ?? t(l, 'noName')}</Text></View>
+          <View style={s.issueCopy}><Text style={s.issueImpact} numberOfLines={2}>{issue.note}</Text><Text style={s.issueMeta}>{issue.workshop} · {t(l, issue.status)} · {t(l, ({ production: 'deptProduction', logistics: 'deptLogistics', equipment: 'deptEquipment', quality: 'deptQuality', engineering: 'deptEngineering', other: 'deptOther' } as const)[issue.responsibleDepartment])}</Text></View>
         </View>)}
       </Card>
     </Pressable> : null}
@@ -81,7 +90,7 @@ export default function HomeScreen() {
       </Pressable>
     </View>
 
-    <Card style={s.rankingCard}>
+    {settings.role !== 'operator' ? <Card style={s.rankingCard}>
       <Row style={s.rankingHeader}><View><Text style={s.section}>{t(l, 'workshopRanking')}</Text><Text style={s.sectionHint}>{formatPeriod(new Date(), period)} · {t(l, 'completion')}</Text></View></Row>
       <View style={s.metricSwitch}>
         {(['4m', 'meeting'] as const).map(value => {
@@ -91,16 +100,16 @@ export default function HomeScreen() {
           </Pressable>;
         })}
       </View>
-      {shops.map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
-    </Card>
+      {visibleShops.map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
+    </Card> : null}
 
-    <Card style={s.rankingCard}>
+    {settings.role !== 'operator' ? <Card style={s.rankingCard}>
       <Row style={s.rankingHeader}>
         <View><Text style={s.section}>{t(l, 'executorRanking')}</Text><Text style={s.sectionHint}>{t(l, metric === '4m' ? 'metric4m' : 'metricMeeting')} · {t(l, 'completion')}</Text></View>
         <Pressable onPress={() => router.push({ pathname: '/rankings', params: { period, metric } } as unknown as Href)}><Text style={s.link}>{t(l, 'viewAll')}　›</Text></Pressable>
       </Row>
-      {people.slice(0, 5).map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
-    </Card>
+      {visiblePeople.slice(0, 5).map(row => <RankingRow key={row.id} row={row} metric={metric} language={l} />)}
+    </Card> : null}
 
     {!settings.operator ? <Pressable onPress={() => router.push('/settings')} style={s.namePrompt}><Text style={s.namePromptText}>{t(l, 'nameRequired')}　→</Text></Pressable> : null}
   </Screen>;
@@ -114,6 +123,7 @@ const s = StyleSheet.create({
   summaryMetrics: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 10 }, summaryMetric: { flex: 1, gap: 4 }, summaryLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' }, summaryValue: { fontSize: 21, fontWeight: '900' }, summaryDivider: { width: 1, height: 38, backgroundColor: colors.line },
   periodSwitch: { flexDirection: 'row', backgroundColor: '#F0F3F8', borderRadius: 10, padding: 3, gap: 2 }, periodOption: { paddingVertical: 8, paddingHorizontal: 8, borderRadius: 8 }, periodActive: { backgroundColor: '#FFFFFF' }, periodText: { color: colors.muted, fontSize: 11, fontWeight: '800' }, periodTextActive: { color: colors.blue },
   demoNotice: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 11, backgroundColor: '#FFF7E9' }, demoDot: { color: colors.amber, fontSize: 9 }, demoText: { flex: 1, color: '#956017', fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  tasksCard: { padding: 15, borderRadius: 18, gap: 8 }, taskRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, borderRadius: 12, backgroundColor: '#F7FAFE' }, taskCopy: { flex: 1, gap: 3 }, taskTitle: { color: colors.ink, fontSize: 14, fontWeight: '900' },
   issueCard: { gap: 9, borderColor: '#EBC7C1' }, issueRow: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingVertical: 4 }, issueDot: { color: colors.red, fontSize: 17, fontWeight: '900', width: 18, textAlign: 'center' }, issueCopy: { flex: 1, gap: 3 }, issueImpact: { color: colors.ink, fontSize: 13, lineHeight: 18, fontWeight: '800' }, issueMeta: { color: colors.muted, fontSize: 11 },
   sectionRow: { alignItems: 'center', marginTop: 1 }, section: { color: colors.ink, fontSize: 16, fontWeight: '900' }, sectionHint: { color: colors.muted, fontSize: 10, marginTop: 3 },
   actions: { flexDirection: 'row', gap: 10 }, actionPressable: { flex: 1, minWidth: 0, borderRadius: 16, overflow: 'hidden' }, actionTile: { minHeight: 110, padding: 13, justifyContent: 'space-between', alignItems: 'flex-start' }, pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] }, actionTitle: { color: '#FFFFFF', fontWeight: '900', fontSize: 15 }, actionSubtitle: { color: '#EAF4FF', fontSize: 9, fontWeight: '700' },

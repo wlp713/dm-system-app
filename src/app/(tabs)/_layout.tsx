@@ -14,8 +14,8 @@ const items = [
 ] as const;
 
 export default function TabsLayout() {
-  const { settings, records } = useDm();
-  const openIssueCount = records.filter(isOpenIssue).length;
+  const { settings, issues } = useDm();
+  const openIssueCount = issues.filter(isOpenIssue).length;
   return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { height: 68, paddingTop: 7, paddingBottom: 9, borderTopColor: colors.line, backgroundColor: '#fff' }, tabBarLabelStyle: { fontSize: 11, fontWeight: '700' } }}>
     {items.map(item => <Tabs.Screen key={item.name} name={item.name} options={{ title: t(settings.language, item.key), tabBarBadge: item.name === 'inbox' && openIssueCount ? openIssueCount : undefined, tabBarBadgeStyle: { backgroundColor: colors.red, color: '#fff', fontSize: 10, minWidth: 18, height: 18 }, tabBarIcon: ({ color }) => <AppIcon name={item.icon} glyph={item.glyph} tintColor={color} size={22} /> }} />)}
   </Tabs>;

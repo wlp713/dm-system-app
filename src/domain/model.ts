@@ -1,6 +1,6 @@
 export type Language = 'zh' | 'th';
 export type Category = 'person' | 'machine' | 'material' | 'method';
-export type CheckStatus = 'normal' | 'abnormal';
+export type CheckStatus = 'normal' | 'abnormal' | 'notApplicable';
 export type MeetingStatus = 'held' | 'missed';
 export type CheckType = '4m' | 'meeting' | 'legacyInterval';
 export type DashboardPeriod = 'day' | 'week' | 'month';
@@ -11,6 +11,28 @@ export type DepartmentKey = 'production' | 'logistics' | 'equipment' | 'quality'
 export type IssuePriority = 'immediate' | 'beforeStart' | 'followUp';
 export type IssueStatus = 'awaitingAck' | 'accepted' | 'processing' | 'waitingVerification' | 'crossShift' | 'closed';
 export type IssueAction = 'reported' | 'accepted' | 'started' | 'submittedForReview' | 'returned' | 'handedOver' | 'closed' | 'comment';
+export type UserRole = 'operator' | 'supervisor' | 'admin';
+
+export interface Issue {
+  id: string;
+  sourceRecordId: string;
+  type: '4m' | 'meeting';
+  category?: Category;
+  workshop: string;
+  operator: string;
+  shift: Settings['shift'];
+  targetShift?: Settings['shift'];
+  title: string;
+  note: string;
+  photoUri: string | null;
+  responsiblePerson?: string;
+  responsibleDepartment: DepartmentKey;
+  priority: IssuePriority;
+  status: IssueStatus;
+  updates: IssueUpdate[];
+  createdAt: string;
+  batchId?: string;
+}
 
 export interface IssueUpdate {
   id: string;
@@ -33,6 +55,7 @@ export interface RecordRevision {
 export interface Settings {
   workshop: string;
   operator: string;
+  role: UserRole;
   shift: 'day' | 'night';
   targetShift: 'day' | 'night';
   language: Language;
@@ -53,6 +76,11 @@ export interface CheckRecord {
   photoUri: string | null;
   selection?: string;
   meetingPeriod?: MeetingPeriod;
+  actualMeetingTime?: string;
+  meetingSummary?: string;
+  nextReviewAt?: string;
+  linkedIssueIds?: string[];
+  batchId?: string;
   slotKey: string;
   createdAt: string;
   responsiblePerson?: string;
@@ -70,7 +98,7 @@ export const WORKSHOPS = ['PRO1', 'PRO2', 'PRO3', 'PRO4', 'PRO5', 'PRO6', 'PE', 
 export const RESPONSIBLE_DEPARTMENTS: DepartmentKey[] = ['production', 'logistics', 'equipment', 'quality', 'engineering', 'other'];
 const deviceLocale = Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase();
 export const DEFAULT_SETTINGS: Settings = {
-  workshop: 'PRO1', operator: '', shift: 'day', targetShift: 'day', language: deviceLocale.startsWith('th') ? 'th' : 'zh',
+  workshop: 'PRO1', operator: '', role: 'operator', shift: 'day', targetShift: 'day', language: deviceLocale.startsWith('th') ? 'th' : 'zh',
   morningMeetingTime: '10:30', afternoonMeetingTime: '14:00',
 };
 
@@ -78,7 +106,11 @@ export function isIssueRecord(record: CheckRecord) {
   return record.status === 'abnormal' || record.status === 'missed';
 }
 
-export function isOpenIssue(record: CheckRecord) {
+export function isOpenIssue(issue: Issue) {
+  return issue.status !== 'closed';
+}
+
+export function isLegacyOpenIssue(record: CheckRecord) {
   return isIssueRecord(record) && record.issueStatus !== 'closed';
 }
 
@@ -143,6 +175,6 @@ export function formatPeriod(date: Date, period: DashboardPeriod) {
 }
 
 export function today4m(records: CheckRecord[], settings: Settings) {
-  const prefix = `${dateKey()}-${settings.shift}`;
+  const prefix = `${dateKey()}-${settings.targetShift}`;
   return CATEGORIES.filter(category => records.some(record => record.type === '4m' && record.category === category && record.workshop === settings.workshop && record.slotKey === prefix)).length;
 }
