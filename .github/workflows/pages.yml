@@ -1,7 +1,7 @@
-name: Publish DM demo
+name: Publish DM preview
 on:
   push:
-    branches: [main]
+    branches: [main, feature/field-ready-workflow]
   workflow_dispatch:
 permissions:
   contents: read
